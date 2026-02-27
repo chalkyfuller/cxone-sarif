@@ -70,14 +70,17 @@ class ScaRun(RunFactory):
     max_rank = 4
     max_score = 0.0
 
+    # First pass: find the highest severity
     for vuln in vulnerabilities:
       severity = ScaRun.get_value_safe("Severity", vuln)
-      score = ScaRun.get_value_safe("Score", vuln)
       rank = severity_order.get(severity, 4)
       if rank < max_rank:
         max_rank = rank
         max_severity = severity
-        max_score = score if score is not None else 0.0
+
+    # Second pass: get the maximum score from ALL vulnerabilities (not just the highest severity)
+    all_scores = [ScaRun.get_value_safe("Score", v) for v in vulnerabilities if ScaRun.get_value_safe("Score", v) is not None]
+    max_score = max(all_scores) if all_scores else 0.0
 
     return max_severity, max_score
 
@@ -147,7 +150,8 @@ class ScaRun(RunFactory):
       if group_by == ScaOpts.GROUP_PACKAGE_MANIFEST_SEVERITY:
         severity = group_key[3]
         # Get the maximum score from all vulnerabilities in this severity group
-        max_score = max([ScaRun.get_value_safe("Score", v) or 0.0 for v in vuln_group])
+        scores = [ScaRun.get_value_safe("Score", v) for v in vuln_group if ScaRun.get_value_safe("Score", v) is not None]
+        max_score = max(scores) if scores else 0.0
       else:
         # For package-manifest grouping, use the maximum severity
         severity, max_score = ScaRun.__get_max_severity(vuln_group)
