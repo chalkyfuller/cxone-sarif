@@ -58,11 +58,11 @@ cxone-sarif -h
 This help documentation is displayed:
 
 ```Console
-Usage: cxone-sarif [-h | --help | -v | --version] --tenant TENANT (--region REGION | (--url URL --iam-url IAMURL)) 
-                   (--api-key APIKEY | (--client OCLIENT --secret OSECRET) | --use-env-oauth | --use-env-api-key) 
-                   [--level LOGLEVEL] [--log-file LOGFILE] [--timeout TIMEOUT] [--retries RETRIES] [--proxy IP:PORT] 
+Usage: cxone-sarif [-h | --help | -v | --version] --tenant TENANT (--region REGION | (--url URL --iam-url IAMURL))
+                   (--api-key APIKEY | (--client OCLIENT --secret OSECRET) | --use-env-oauth | --use-env-api-key)
+                   [--level LOGLEVEL] [--log-file LOGFILE] [--timeout TIMEOUT] [--retries RETRIES] [--proxy IP:PORT]
                    [--outdir OUTDIR] [--no-sast] [--no-sast-apisec] [--no-sca] [--no-kics] [--no-containers]
-                   [--with-sast-simid] [-qk] [-t THREADS] SCANIDS...
+                   [--with-sast-simid] [--sca-group-by GROUPBY] [-qk] [-t THREADS] SCANIDS...
                    
   SCANIDS...          One or more space-separated scan ids that will each generate a file containing a SARIF log.
 
@@ -119,6 +119,14 @@ Usage: cxone-sarif [-h | --help | -v | --version] --tenant TENANT (--region REGI
 
   SAST Options:
     --with-sast-simid   Append similarity ID to SAST result descriptions. [default: false]
+
+  SCA Options:
+    --sca-group-by GROUPBY
+                        How to group SCA findings. [default: none]
+                        Options:
+                          none                        - Individual CVE findings (default)
+                          package-manifest-severity   - Group by package version + manifest + severity
+                          package-manifest            - Group by package version + manifest (uses max severity)
 
   Logging Output Options:
   --level LOGLEVEL    Log level [default: INFO]
@@ -215,6 +223,29 @@ If there is an API Security result associated with the SAST example, the API sec
 The SCA results will show the manifest file that references the vulnerable package along with the CVE description.
 
 ![sarif-sca-example](doc-assets/sarif-sca-example.png)
+
+### SCA Grouping Options
+
+By default, each CVE is reported as a separate finding. For projects with many dependencies, this can result in hundreds of alerts. Use the `--sca-group-by` option to reduce alert noise:
+
+**`none` (default)**: Each CVE generates a separate alert. This provides the most granular view but can be overwhelming in large projects.
+
+**`package-manifest-severity`**: Groups vulnerabilities by unique combination of package version, manifest file, and severity level. This creates one alert per package-version-manifest-severity group. All CVEs in that group are listed in the alert description. When a CVE is fixed, the alert updates to show remaining CVEs. When all CVEs of a severity are fixed, that alert is automatically closed by GitHub.
+
+**`package-manifest`**: Groups vulnerabilities by package version and manifest file only (ignoring severity). Uses the highest severity in the group. This provides maximum alert reduction. **Important behavior**: When CVEs are fixed, the alert severity may change. For example, if a package has CVE-2024-1 (HIGH) and CVE-2024-2 (MEDIUM), the alert shows as HIGH. If CVE-2024-1 is fixed in the next scan, GitHub updates the same alert to MEDIUM severity, keeping the alert history intact.
+
+Example usage:
+
+```bash
+# Default: individual CVE findings
+cxone-sarif --tenant mytenant --region US --use-env-oauth scanid
+
+# Group by package version + manifest + severity (recommended for most use cases)
+cxone-sarif --tenant mytenant --region US --use-env-oauth --sca-group-by package-manifest-severity scanid
+
+# Group by package version + manifest only (maximum reduction)
+cxone-sarif --tenant mytenant --region US --use-env-oauth --sca-group-by package-manifest scanid
+```
 
 If exploitable path results were detected, hints are displayed in the result summary.  The "Show Paths" link will open a display showing
 the location in the code where the package may be referenced.

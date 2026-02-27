@@ -9,16 +9,27 @@ class SastOpts:
 
 
 @dataclass(frozen=True)
+class ScaOpts:
+    SkipSca: bool
+    GroupBy: str
+
+    # Valid grouping modes
+    GROUP_NONE = "none"
+    GROUP_PACKAGE_MANIFEST_SEVERITY = "package-manifest-severity"
+    GROUP_PACKAGE_MANIFEST = "package-manifest"
+
+
+@dataclass(frozen=True)
 class ReportOpts:
     SastOpts: SastOpts
-    SkipSca: bool
+    ScaOpts: ScaOpts
     SkipKics: bool
     SkipContainers: bool
 
 
 DEFAULT = ReportOpts(
     SastOpts=SastOpts(SkipSast=False, OmitApiResults=False, AppendSimilarityId=False),
-    SkipSca=False,
+    ScaOpts=ScaOpts(SkipSca=False, GroupBy=ScaOpts.GROUP_NONE),
     SkipKics=False,
     SkipContainers=False,
 )

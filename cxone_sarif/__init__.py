@@ -137,11 +137,12 @@ async def get_sarif_v210_log_for_scan(
                 )
             )
 
-        if not opts.SkipSca and "sca" in engines:
+        if not opts.ScaOpts.SkipSca and "sca" in engines:
             futures.append(
                 asyncio.get_running_loop().create_task(
                     get_sca_run(
                         client,
+                        opts.ScaOpts,
                         project_id,
                         scan_id,
                         PLATFORM_NAME,

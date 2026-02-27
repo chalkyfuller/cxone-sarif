@@ -10,7 +10,7 @@ import importlib
 import cxone_api as cx
 from cxone_sarif.log import bootstrap
 from cxone_sarif import get_sarif_v210_log_for_scan
-from cxone_sarif.opts import ReportOpts, SastOpts
+from cxone_sarif.opts import ReportOpts, SastOpts, ScaOpts
 from cxone_sarif.__agent__ import __agent__
 from cxone_sarif.__version__ import __version__
 
@@ -22,7 +22,7 @@ async def main():
                      (--api-key APIKEY | (--client OCLIENT --secret OSECRET) | --use-env-oauth | --use-env-api-key)
                      [--level LOGLEVEL] [--log-file LOGFILE] [--timeout TIMEOUT] [--delay DELAY] [--retries RETRIES] [--proxy IP:PORT]
                      [--outdir OUTDIR] [--no-sast] [--no-sast-apisec] [--no-sca] [--no-kics] [--no-containers]
-                     [--with-sast-simid] [-qk] [-t THREADS] SCANIDS...
+                     [--with-sast-simid] [--sca-group-by GROUPBY] [-qk] [-t THREADS] SCANIDS...
 
     SCANIDS...          One or more space-separated scan ids that will each generate a file containing a SARIF log.
 
@@ -82,6 +82,14 @@ async def main():
 
     SAST Options:
     --with-sast-simid   Append similarity ID to SAST result descriptions. [default: false]
+
+    SCA Options:
+    --sca-group-by GROUPBY
+                        How to group SCA findings. [default: none]
+                        Options:
+                          none                        - Individual CVE findings (default)
+                          package-manifest-severity   - Group by package version + manifest + severity
+                          package-manifest            - Group by package version + manifest (uses max severity)
 
     Logging Output Options:
     --level LOGLEVEL    Log level [default: INFO]
@@ -155,7 +163,10 @@ async def main():
                                 OmitApiResults=args["--no-sast-apisec"],
                                 AppendSimilarityId=args["--with-sast-simid"],
                             ),
-                            SkipSca=args["--no-sca"],
+                            ScaOpts=ScaOpts(
+                                SkipSca=args["--no-sca"],
+                                GroupBy=args["--sca-group-by"] if args["--sca-group-by"] is not None else ScaOpts.GROUP_NONE,
+                            ),
                             SkipKics=args["--no-kics"],
                             SkipContainers=args["--no-containers"],
                         ),
