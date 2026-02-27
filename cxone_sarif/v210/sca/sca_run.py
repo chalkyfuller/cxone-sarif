@@ -83,36 +83,6 @@ class ScaRun(RunFactory):
 
 
   @staticmethod
-  def __create_generic_severity_rules() -> Dict[str, ReportingDescriptor]:
-    """Create generic rules for each severity level for grouped findings."""
-    # Map severity levels to representative CVSS scores
-    severity_scores = {
-      "CRITICAL": "9.0",
-      "HIGH": "7.0",
-      "MEDIUM": "5.0",
-      "LOW": "3.0",
-      "INFO": "0.0"
-    }
-
-    rules = {}
-
-    for severity, score in severity_scores.items():
-      rule_id = f"SCA-{severity.capitalize()}"
-      rules[rule_id] = ReportingDescriptor(
-        id=rule_id,
-        name=ScaRun.make_pascal_case_identifier(f"SCA {severity} Severity Vulnerabilities"),
-        short_description=MultiformatMessageString(text=f"SCA vulnerabilities with {severity} severity"),
-        full_description=MultiformatMessageString(text=f"This rule represents one or more SCA vulnerabilities with {severity} severity level found in a package."),
-        help=MultiformatMessageString(text=f"Package contains vulnerabilities rated as {severity} severity. Review the specific CVEs listed in the result details."),
-        properties={
-          "security-severity": score
-        }
-      )
-
-    return rules
-
-
-  @staticmethod
   def __group_vulnerabilities(vulnerabilities : List[Dict], location_index : Dict[str, List[str]], group_by : str) -> Dict[tuple, List[Dict]]:
     """Group vulnerabilities based on the specified grouping mode.
 
