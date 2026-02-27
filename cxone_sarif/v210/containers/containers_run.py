@@ -121,11 +121,11 @@ class ContainersRun(RunFactory):
 
     tool = Tool(driver=driver)
 
-    return Run(tool=tool, 
-               results=results, 
+    return Run(tool=tool,
+               results=results,
                automation_details=RunAutomationDetails(
                  description=Message(text="Container security analysis scan with CheckmarxOne Container Security"),
-                 id=RunFactory.make_run_id(project_id, scan_id),
+                 id=RunFactory.make_run_id(project_id, scan_id, "containers"),
                  guid=scan_id,
                  correlation_guid=project_id),  
               column_kind="unicodeCodePoints")

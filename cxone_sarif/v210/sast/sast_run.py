@@ -347,12 +347,12 @@ class SastRun(RunFactory):
                   "scanMetadata" : metadata
                   })
     
-    return Run(tool=tool, 
-               results=results, 
+    return Run(tool=tool,
+               results=results,
                automation_details=RunAutomationDetails(
                  description=Message(text="Static analysis scan with CheckmarxOne SAST"),
-                 id=RunFactory.make_run_id(project_id, scan_id),
+                 id=RunFactory.make_run_id(project_id, scan_id, "sast"),
                  guid=scan_id,
-                 correlation_guid=project_id),  
+                 correlation_guid=project_id),
                column_kind="unicodeCodePoints")
   

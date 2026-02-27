@@ -120,11 +120,11 @@ class IaCRun(RunFactory):
 
     tool = Tool(driver=driver)
 
-    return Run(tool=tool, 
-               results=results, 
+    return Run(tool=tool,
+               results=results,
                automation_details=RunAutomationDetails(
                  description=Message(text="Infrastructure-As-Code analysis scan with CheckmarxOne KICS"),
-                 id=RunFactory.make_run_id(project_id, scan_id),
+                 id=RunFactory.make_run_id(project_id, scan_id, "kics"),
                  guid=scan_id,
                  correlation_guid=project_id),  
               column_kind="unicodeCodePoints")
