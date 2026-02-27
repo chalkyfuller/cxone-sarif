@@ -58,30 +58,45 @@ class ScaRun(RunFactory):
 
 
   @staticmethod
-  def __get_max_severity(vulnerabilities: List[Dict]) -> str:
-    """Determine the maximum severity from a list of vulnerabilities."""
+  def __get_max_severity(vulnerabilities: List[Dict]) -> tuple:
+    """Determine the maximum severity and corresponding score from a list of vulnerabilities.
+
+    Returns:
+      Tuple of (severity_string, score_float)
+    """
     severity_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "INFO": 4}
 
     max_severity = "INFO"
     max_rank = 4
+    max_score = 0.0
 
     for vuln in vulnerabilities:
       severity = ScaRun.get_value_safe("Severity", vuln)
+      score = ScaRun.get_value_safe("Score", vuln)
       rank = severity_order.get(severity, 4)
       if rank < max_rank:
         max_rank = rank
         max_severity = severity
+        max_score = score if score is not None else 0.0
 
-    return max_severity
+    return max_severity, max_score
 
 
   @staticmethod
   def __create_generic_severity_rules() -> Dict[str, ReportingDescriptor]:
     """Create generic rules for each severity level for grouped findings."""
-    severities = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]
+    # Map severity levels to representative CVSS scores
+    severity_scores = {
+      "CRITICAL": "9.0",
+      "HIGH": "7.0",
+      "MEDIUM": "5.0",
+      "LOW": "3.0",
+      "INFO": "0.0"
+    }
+
     rules = {}
 
-    for severity in severities:
+    for severity, score in severity_scores.items():
       rule_id = f"SCA-{severity.capitalize()}"
       rules[rule_id] = ReportingDescriptor(
         id=rule_id,
@@ -90,7 +105,7 @@ class ScaRun(RunFactory):
         full_description=MultiformatMessageString(text=f"This rule represents one or more SCA vulnerabilities with {severity} severity level found in a package."),
         help=MultiformatMessageString(text=f"Package contains vulnerabilities rated as {severity} severity. Review the specific CVEs listed in the result details."),
         properties={
-          "security-severity": RunFactory.translate_severity_to_score(severity)
+          "security-severity": score
         }
       )
 
@@ -150,12 +165,6 @@ class ScaRun(RunFactory):
       package_version = group_key[1]
       manifest_path = group_key[2]
 
-      # Determine severity based on grouping mode
-      if group_by == ScaOpts.GROUP_PACKAGE_MANIFEST_SEVERITY:
-        severity = group_key[3]
-      else:
-        # For package-manifest grouping, use the maximum severity
-        severity = ScaRun.__get_max_severity(vuln_group)
       # Collect all CVE IDs in this group
       cve_ids = [ScaRun.get_value_safe("Id", v) for v in vuln_group]
 
@@ -163,6 +172,15 @@ class ScaRun(RunFactory):
       first_vuln = vuln_group[0]
       package_id = ScaRun.get_value_safe("PackageId", first_vuln)
       package_manager = ScaRun.get_value_safe("PackageManager", first_vuln)
+
+      # Determine severity and score based on grouping mode
+      if group_by == ScaOpts.GROUP_PACKAGE_MANIFEST_SEVERITY:
+        severity = group_key[3]
+        # Get the maximum score from all vulnerabilities in this severity group
+        max_score = max([ScaRun.get_value_safe("Score", v) or 0.0 for v in vuln_group])
+      else:
+        # For package-manifest grouping, use the maximum severity
+        severity, max_score = ScaRun.__get_max_severity(vuln_group)
 
       # Create rule ID based on severity
       rule_id = f"SCA-{severity.capitalize()}"
@@ -213,6 +231,7 @@ class ScaRun(RunFactory):
           "cveIds": cve_ids,
           "cveCount": len(cve_ids),
           "manifestPath": manifest_path,
+          "maxCvssScore": str(max_score),
           "riskType": "package",
           "groupBy": group_by
         }
