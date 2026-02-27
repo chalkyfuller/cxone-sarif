@@ -402,7 +402,7 @@ class ScaRun(RunFactory):
                results=results,
                automation_details=RunAutomationDetails(
                  description=Message(text="Software composition analysis scan with CheckmarxOne SCA"),
-                 id=RunFactory.make_run_id(project_id, scan_id, "sca"),
+                 id=RunFactory.make_run_id(project_id, scan_id),
                  guid=scan_id,
                  correlation_guid=project_id),
               column_kind="unicodeCodePoints")

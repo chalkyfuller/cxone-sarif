@@ -125,7 +125,7 @@ class ContainersRun(RunFactory):
                results=results,
                automation_details=RunAutomationDetails(
                  description=Message(text="Container security analysis scan with CheckmarxOne Container Security"),
-                 id=RunFactory.make_run_id(project_id, scan_id, "containers"),
+                 id=RunFactory.make_run_id(project_id, scan_id),
                  guid=scan_id,
                  correlation_guid=project_id),  
               column_kind="unicodeCodePoints")

@@ -19,11 +19,8 @@ class RunFactory:
         raise NotImplementedError("get_tool_guid")
 
     @staticmethod
-    def make_run_id(project_id: str, scan_id: str, tool_name: str = None) -> str:
-        base_id = f"projectid/{project_id}/scanid/{scan_id}/"
-        if tool_name:
-            return f"{base_id}{tool_name}/"
-        return base_id
+    def make_run_id(project_id: str, scan_id: str) -> str:
+        return f"projectid/{project_id}/scanid/{scan_id}/"
 
     @staticmethod
     def get_value_safe(key: str, json: Dict) -> Any:
