@@ -155,7 +155,7 @@ class ScaRun(RunFactory):
   def __get_grouped_vulnerabilities(client : CxOneClient, vulnerabilities : List[Dict], location_index : Dict[str, List[str]], project_id : str, scan_id : str, group_by : str) -> Tuple[List[Result], Dict[str, str]]:
     """Create grouped SCA findings based on the specified grouping mode."""
     results = []
-    rules = ScaRun.__create_generic_severity_rules()
+    rules = {}
 
     grouped_vulns = ScaRun.__group_vulnerabilities(vulnerabilities, location_index, group_by)
 
@@ -182,8 +182,35 @@ class ScaRun(RunFactory):
         # For package-manifest grouping, use the maximum severity
         severity, max_score = ScaRun.__get_max_severity(vuln_group)
 
-      # Create rule ID based on severity
-      rule_id = f"SCA-{severity.capitalize()}"
+      # Create unique rule ID based on the grouping mode
+      # Sanitize values for use in rule ID (replace special chars with hyphens)
+      sanitized_package = package_name.replace('/', '-').replace(':', '-').replace('@', '-').replace('.', '-')
+      sanitized_version = package_version.replace('.', '-').replace('/', '-')
+      # Create a short hash of the manifest path to keep rule IDs manageable
+      import hashlib
+      manifest_hash = hashlib.md5(manifest_path.encode()).hexdigest()[:8] if manifest_path else "nomanifest"
+
+      # Build rule ID based on grouping mode
+      if group_by == ScaOpts.GROUP_PACKAGE_MANIFEST_SEVERITY:
+        rule_id = f"SCA-{sanitized_package}-{sanitized_version}-{manifest_hash}-{severity}"
+      else:
+        rule_id = f"SCA-{sanitized_package}-{sanitized_version}-{manifest_hash}"
+
+      # Create rule if it doesn't exist yet
+      if rule_id not in rules:
+        # Extract manifest filename for display
+        manifest_display = manifest_path.split('/')[-1] if manifest_path else "unknown manifest"
+
+        rules[rule_id] = ReportingDescriptor(
+          id=rule_id,
+          name=ScaRun.make_pascal_case_identifier(f"SCA {package_name} {package_version}"),
+          short_description=MultiformatMessageString(text=f"SCA: {package_name} {package_version}"),
+          full_description=MultiformatMessageString(text=f"Software Composition Analysis findings for package {package_name} version {package_version} in {manifest_display}. Contains {len(cve_ids)} CVE(s) with {severity} severity."),
+          help=MultiformatMessageString(text=f"This package version contains known vulnerabilities. Review the CVEs listed in the result details and consider updating to a patched version."),
+          properties={
+            "security-severity": str(max_score)
+          }
+        )
 
       # Build locations from manifest path
       locations = None
