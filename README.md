@@ -62,7 +62,7 @@ Usage: cxone-sarif [-h | --help | -v | --version] --tenant TENANT (--region REGI
                    (--api-key APIKEY | (--client OCLIENT --secret OSECRET) | --use-env-oauth | --use-env-api-key)
                    [--level LOGLEVEL] [--log-file LOGFILE] [--timeout TIMEOUT] [--retries RETRIES] [--proxy IP:PORT]
                    [--outdir OUTDIR] [--no-sast] [--no-sast-apisec] [--no-sca] [--no-kics] [--no-containers]
-                   [--with-sast-simid] [--sca-group-by GROUPBY] [-qk] [-t THREADS] SCANIDS...
+                   [--with-sast-simid] [--sca-group-by GROUPBY] [--severities SEVERITIES] [-qk] [-t THREADS] SCANIDS...
                    
   SCANIDS...          One or more space-separated scan ids that will each generate a file containing a SARIF log.
 
@@ -168,22 +168,6 @@ cxone-sarif \
   --region US \
   --use-env-oauth \
   --severities CRITICAL,HIGH,MEDIUM \
-  scanid
-
-# Only include CRITICAL findings
-cxone-sarif \
-  --tenant mytenant \
-  --region US \
-  --use-env-oauth \
-  --severities CRITICAL \
-  scanid
-
-# You can also use semicolons as separators
-cxone-sarif \
-  --tenant mytenant \
-  --region US \
-  --use-env-oauth \
-  --severities "CRITICAL;HIGH;MEDIUM;LOW" \
   scanid
 ```
 
