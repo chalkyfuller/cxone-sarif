@@ -20,7 +20,9 @@ class RunFactory:
 
     @staticmethod
     def make_run_id(project_id: str, scan_id: str) -> str:
-        return f"projectid/{project_id}/scanid/{scan_id}/"
+        # Use only project_id for stable tracking across scans
+        # This allows GitHub to properly correlate results and auto-close fixed alerts
+        return f"projectid/{project_id}/"
 
     @staticmethod
     def get_value_safe(key: str, json: Dict) -> Any:
