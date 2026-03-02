@@ -128,6 +128,13 @@ Usage: cxone-sarif [-h | --help | -v | --version] --tenant TENANT (--region REGI
                           package-manifest-severity   - Group by package version + manifest + severity
                           package-manifest            - Group by package version + manifest (uses max severity)
 
+  Severity Filtering Options:
+    --severities SEVERITIES
+                        Filter results to include only specified severity levels.
+                        Comma or semicolon separated list. [default: all]
+                        Valid values: CRITICAL, HIGH, MEDIUM, LOW, INFO
+                        Example: --severities CRITICAL,HIGH,MEDIUM
+
   Logging Output Options:
   --level LOGLEVEL    Log level [default: INFO]
                       Use: DEBUG, INFO, WARNING, ERROR, CRITICAL
@@ -149,6 +156,38 @@ cxone-sarif \
 
 Upon completion, the files `10253e85-2d70-450e-bc5d-9e54dc5f10c5.sarif` and `97068a6d-f2fa-4047-bea1-bd74df3a4059.sarif` are written
 in `./` (the default output path), each containing a SARIF log with a `Run` for each scan engine executed for the scan.
+
+### Filtering Results by Severity
+
+You can filter results to include only specific severity levels using the `--severities` option. This is particularly useful when uploading to GitHub Advanced Security (GHAS) if you want to exclude low-priority findings like INFO severity issues:
+
+```bash
+# Only include CRITICAL, HIGH, and MEDIUM severity findings
+cxone-sarif \
+  --tenant mytenant \
+  --region US \
+  --use-env-oauth \
+  --severities CRITICAL,HIGH,MEDIUM \
+  scanid
+
+# Only include CRITICAL findings
+cxone-sarif \
+  --tenant mytenant \
+  --region US \
+  --use-env-oauth \
+  --severities CRITICAL \
+  scanid
+
+# You can also use semicolons as separators
+cxone-sarif \
+  --tenant mytenant \
+  --region US \
+  --use-env-oauth \
+  --severities "CRITICAL;HIGH;MEDIUM;LOW" \
+  scanid
+```
+
+The severity filter applies to all scan engines (SAST, SCA, KICS, Containers). When not specified, all severity levels are included in the SARIF output.
 
 ### Handling Errors with the CLI
 

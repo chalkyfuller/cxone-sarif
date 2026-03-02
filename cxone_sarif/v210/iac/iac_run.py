@@ -48,7 +48,7 @@ class IaCRun(RunFactory):
 
 
   @staticmethod
-  async def factory(client : CxOneClient, project_id : str, scan_id : str, platform : str, version : str, organization : str, info_uri : str) -> Run:
+  async def factory(client : CxOneClient, severity_filter : list, project_id : str, scan_id : str, platform : str, version : str, organization : str, info_uri : str) -> Run:
     rules = {}
     results = []
 
@@ -56,6 +56,12 @@ class IaCRun(RunFactory):
       state = IaCRun.get_value_safe("state", result)
       if state is not None and state == "NOT_EXPLOITABLE":
         continue
+
+      # Filter by severity if specified
+      if len(severity_filter) > 0:
+        severity = IaCRun.get_value_safe("severity", result)
+        if severity is None or severity.upper() not in severity_filter:
+          continue
 
       query_name = IaCRun.get_value_safe("queryName", result)
       query_platform = IaCRun.get_value_safe("platform", result)

@@ -184,7 +184,7 @@ class SastRun(RunFactory):
     return index
   
   @staticmethod
-  async def factory(client : CxOneClient, omit_apisec : bool, append_similarity_id : bool, project_id : str, scan_id : str, 
+  async def factory(client : CxOneClient, omit_apisec : bool, append_similarity_id : bool, severity_filter : list, project_id : str, scan_id : str,
                     platform : str, version : str, organization : str, info_uri : str) -> Run:
 
 
@@ -199,7 +199,13 @@ class SastRun(RunFactory):
       state = SastRun.get_value_safe("state", result)
       if state is not None and state == "NOT_EXPLOITABLE":
         continue
-      
+
+      # Filter by severity if specified
+      if len(severity_filter) > 0:
+        severity = SastRun.get_value_safe("severity", result)
+        if severity is None or severity.upper() not in severity_filter:
+          continue
+
       group = SastRun.get_value_safe("group", result)
       query_name = SastRun.get_value_safe("queryName", result)
       queryId = int(result['queryID'])

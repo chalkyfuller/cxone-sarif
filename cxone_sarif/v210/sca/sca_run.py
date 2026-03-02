@@ -125,10 +125,19 @@ class ScaRun(RunFactory):
 
 
   @staticmethod
-  def __get_grouped_vulnerabilities(client : CxOneClient, vulnerabilities : List[Dict], location_index : Dict[str, List[str]], project_id : str, scan_id : str, group_by : str) -> Tuple[List[Result], Dict[str, str]]:
+  def __get_grouped_vulnerabilities(client : CxOneClient, vulnerabilities : List[Dict], location_index : Dict[str, List[str]], project_id : str, scan_id : str, group_by : str, severity_filter : list = []) -> Tuple[List[Result], Dict[str, str]]:
     """Create grouped SCA findings based on the specified grouping mode."""
     results = []
     rules = {}
+
+    # Filter vulnerabilities by severity if specified
+    if len(severity_filter) > 0:
+      filtered_vulns = []
+      for vuln in vulnerabilities:
+        severity = ScaRun.get_value_safe("Severity", vuln)
+        if severity is not None and severity.upper() in severity_filter:
+          filtered_vulns.append(vuln)
+      vulnerabilities = filtered_vulns
 
     grouped_vulns = ScaRun.__group_vulnerabilities(vulnerabilities, location_index, group_by)
 
@@ -242,15 +251,20 @@ class ScaRun(RunFactory):
 
 
   @staticmethod
-  def __get_vulnerabilities(client : CxOneClient, vulnerabilities : List[Dict], location_index : Dict[str, List[str]], project_id : str, scan_id : str, group_by : str = ScaOpts.GROUP_NONE) -> Tuple[List[Result], Dict[str, str]]:
+  def __get_vulnerabilities(client : CxOneClient, vulnerabilities : List[Dict], location_index : Dict[str, List[str]], project_id : str, scan_id : str, group_by : str = ScaOpts.GROUP_NONE, severity_filter : list = []) -> Tuple[List[Result], Dict[str, str]]:
 
     if group_by != ScaOpts.GROUP_NONE:
-      return ScaRun.__get_grouped_vulnerabilities(client, vulnerabilities, location_index, project_id, scan_id, group_by)
+      return ScaRun.__get_grouped_vulnerabilities(client, vulnerabilities, location_index, project_id, scan_id, group_by, severity_filter)
 
     results = []
     rules = {}
 
     for vuln in vulnerabilities:
+      # Filter by severity if specified
+      if len(severity_filter) > 0:
+        severity = ScaRun.get_value_safe("Severity", vuln)
+        if severity is None or severity.upper() not in severity_filter:
+          continue
       cve_id = ScaRun.get_value_safe("Id", vuln)
       package_id = ScaRun.get_value_safe("PackageId", vuln)
       vuln_id = cve_id
@@ -371,7 +385,7 @@ class ScaRun(RunFactory):
     return results, rules
 
   @staticmethod
-  async def factory(client : CxOneClient, opts : ScaOpts, project_id : str, scan_id : str, platform : str, version : str, organization : str, info_uri : str) -> Run:
+  async def factory(client : CxOneClient, opts : ScaOpts, severity_filter : list, project_id : str, scan_id : str, platform : str, version : str, organization : str, info_uri : str) -> Run:
     scan_report = json_on_ok(await get_sca_report(client, scan_id, ScaReportOptions(fileFormat=ScaReportType.ScanReportJson)))
     scan_report_summary = ScaRun.get_value_safe("RiskReportSummary", scan_report)
 
@@ -381,7 +395,7 @@ class ScaRun(RunFactory):
     for package in packages:
       package_loc_index[ScaRun.get_value_safe("Id", package)] = ScaRun.get_value_safe("Locations", package)
 
-    results, rules = ScaRun.__get_vulnerabilities(client, ScaRun.get_value_safe("Vulnerabilities", scan_report), package_loc_index, project_id, scan_id, opts.GroupBy)
+    results, rules = ScaRun.__get_vulnerabilities(client, ScaRun.get_value_safe("Vulnerabilities", scan_report), package_loc_index, project_id, scan_id, opts.GroupBy, severity_filter)
 
     driver = ToolComponent(name="CheckmarxOne-SCA", guid=ScaRun.get_tool_guid(),
                            product_suite=platform,

@@ -127,6 +127,7 @@ async def get_sarif_v210_log_for_scan(
                     get_sast_run(
                         client,
                         opts.SastOpts,
+                        opts.SeverityFilter,
                         project_id,
                         scan_id,
                         PLATFORM_NAME,
@@ -143,6 +144,7 @@ async def get_sarif_v210_log_for_scan(
                     get_sca_run(
                         client,
                         opts.ScaOpts,
+                        opts.SeverityFilter,
                         project_id,
                         scan_id,
                         PLATFORM_NAME,
@@ -158,6 +160,7 @@ async def get_sarif_v210_log_for_scan(
                 asyncio.get_running_loop().create_task(
                     get_iac_run(
                         client,
+                        opts.SeverityFilter,
                         project_id,
                         scan_id,
                         PLATFORM_NAME,
@@ -173,6 +176,7 @@ async def get_sarif_v210_log_for_scan(
                 asyncio.get_running_loop().create_task(
                     get_containers_run(
                         client,
+                        opts.SeverityFilter,
                         project_id,
                         scan_id,
                         PLATFORM_NAME,

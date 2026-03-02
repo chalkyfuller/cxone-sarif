@@ -25,6 +25,16 @@ class ReportOpts:
     ScaOpts: ScaOpts
     SkipKics: bool
     SkipContainers: bool
+    SeverityFilter: list  # List of severity levels to include (empty = all)
+
+    # Valid severity levels
+    SEVERITY_CRITICAL = "CRITICAL"
+    SEVERITY_HIGH = "HIGH"
+    SEVERITY_MEDIUM = "MEDIUM"
+    SEVERITY_LOW = "LOW"
+    SEVERITY_INFO = "INFO"
+
+    ALL_SEVERITIES = [SEVERITY_CRITICAL, SEVERITY_HIGH, SEVERITY_MEDIUM, SEVERITY_LOW, SEVERITY_INFO]
 
 
 DEFAULT = ReportOpts(
@@ -32,4 +42,5 @@ DEFAULT = ReportOpts(
     ScaOpts=ScaOpts(SkipSca=False, GroupBy=ScaOpts.GROUP_NONE),
     SkipKics=False,
     SkipContainers=False,
+    SeverityFilter=[],  # Empty list means include all severities
 )

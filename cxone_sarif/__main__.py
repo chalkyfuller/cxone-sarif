@@ -22,7 +22,7 @@ async def main():
                      (--api-key APIKEY | (--client OCLIENT --secret OSECRET) | --use-env-oauth | --use-env-api-key)
                      [--level LOGLEVEL] [--log-file LOGFILE] [--timeout TIMEOUT] [--delay DELAY] [--retries RETRIES] [--proxy IP:PORT]
                      [--outdir OUTDIR] [--no-sast] [--no-sast-apisec] [--no-sca] [--no-kics] [--no-containers]
-                     [--with-sast-simid] [--sca-group-by GROUPBY] [-qk] [-t THREADS] SCANIDS...
+                     [--with-sast-simid] [--sca-group-by GROUPBY] [--severities SEVERITIES] [-qk] [-t THREADS] SCANIDS...
 
     SCANIDS...          One or more space-separated scan ids that will each generate a file containing a SARIF log.
 
@@ -91,6 +91,13 @@ async def main():
                           package-manifest-severity   - Group by package version + manifest + severity
                           package-manifest            - Group by package version + manifest (uses max severity)
 
+    Severity Filtering Options:
+    --severities SEVERITIES
+                        Filter results to include only specified severity levels.
+                        Comma or semicolon separated list. [default: all]
+                        Valid values: CRITICAL, HIGH, MEDIUM, LOW, INFO
+                        Example: --severities CRITICAL,HIGH,MEDIUM
+
     Logging Output Options:
     --level LOGLEVEL    Log level [default: INFO]
                         Use: DEBUG, INFO, WARNING, ERROR, CRITICAL
@@ -128,6 +135,23 @@ async def main():
             exit(1)
         else:
             _log.info(f"Report files will be written at: {args['--outdir']}")
+
+        # Parse severity filter
+        severity_filter = []
+        if args["--severities"] is not None:
+            # Split by comma or semicolon and normalize to uppercase
+            severities_input = args["--severities"].replace(";", ",")
+            severity_filter = [s.strip().upper() for s in severities_input.split(",") if s.strip()]
+
+            # Validate severities
+            valid_severities = ReportOpts.ALL_SEVERITIES
+            invalid_severities = [s for s in severity_filter if s not in valid_severities]
+            if invalid_severities:
+                _log.error(f"Invalid severity levels: {', '.join(invalid_severities)}")
+                _log.error(f"Valid severity levels are: {', '.join(valid_severities)}")
+                exit(1)
+
+            _log.info(f"Filtering results to include severities: {', '.join(severity_filter)}")
 
         if args["--region"] is not None:
             auth_endpoint = cx.AuthRegionEndpoints[args["--region"]](args["--tenant"])
@@ -169,6 +193,7 @@ async def main():
                             ),
                             SkipKics=args["--no-kics"],
                             SkipContainers=args["--no-containers"],
+                            SeverityFilter=severity_filter,
                         ),
                         concurrency,
                     )
